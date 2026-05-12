@@ -1,0 +1,12 @@
+${AnsiColor.CYAN}
+${AnsiStyle.BOLD}
+  ____    _    _                      
+ / ___|  / \  | |    ___   ___  _ __  
+ \___ \ / _ \ | |   / _ \ / _ \| '_ \ 
+  ___) / ___ \| |__| (_) | (_) | | | |
+ |____/_/   \_\_____\___/ \___/|_| |_|
+
+Java Version: ${java.version}
+Spring Boot Version: ${spring-boot.version}
+Running on PORT: ${server.port}
+${AnsiStyle.NORMAL}

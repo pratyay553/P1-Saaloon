@@ -1,0 +1,57 @@
+# ==============================================================================
+# Java & Maven (Backend)
+# ==============================================================================
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+logs/
+*.log
+
+# ==============================================================================
+# Monorepo & Node (Frontend)
+# ==============================================================================
+# dependencies
+node_modules/
+saloon-platform/node_modules/
+saloon-platform/apps/*/node_modules/
+saloon-platform/packages/*/node_modules/
+.pnp
+.pnp.js
+
+# build artifacts
+saloon-platform/apps/*/.next/
+saloon-platform/apps/*/out/
+saloon-platform/apps/*/build/
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# local env files
+.env*.local
+.env
+
+# ==============================================================================
+# IDE & OS Files
+# ==============================================================================
+.idea/
+*.iml
+*.iws
+.project
+.classpath
+.settings/
+.vscode/
+Thumbs.db

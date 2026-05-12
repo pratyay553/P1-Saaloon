@@ -1,0 +1,4 @@
+Stop	sudo docker stop saloon
+Start	sudo docker start saloon
+Restart	sudo docker restart saloon
+Check Logs	sudo docker logs -f saloon

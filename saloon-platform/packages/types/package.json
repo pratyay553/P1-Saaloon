@@ -1,0 +1,14 @@
+{
+  "name": "@saloon/types",
+  "version": "0.1.0",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "zod": "^3.23.4"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
