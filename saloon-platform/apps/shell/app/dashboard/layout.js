@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Button } from '@saloon/ui';
+import { Button, ThemeToggle } from '@saloon/ui';
 import { useAuthStore } from '@saloon/store';
 import {
   DropdownMenu,
@@ -14,6 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@saloon/ui';
+import { CalendarCheck } from 'lucide-react'; // Import new icon
 
 // In a real app, these would be proper icons from lucide-react
 const MenuIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>;
@@ -27,6 +28,7 @@ const UserIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height
 const navigation = [
   { name: 'Overview', href: '/dashboard', icon: HomeIcon },
   { name: 'Bookings', href: '/dashboard/bookings', icon: CalendarIcon },
+  { name: 'My Appointments', href: '/dashboard/my-appointments', icon: CalendarCheck }, // New navigation item
   { name: 'Customers', href: '/dashboard/customers', icon: UsersIcon },
 ];
 
@@ -188,8 +190,8 @@ export default function DashboardLayout({ children }) {
             <MenuIcon />
           </Button>
           <div className="flex-1 flex justify-end">
-             {/* Add top bar actions here (search, notifications) */}
              <div className="flex items-center gap-4">
+                <ThemeToggle />
                 <span className="text-sm font-medium text-slate-500 hidden sm:block">
                   Hello, {user?.username || 'Guest'}
                 </span>

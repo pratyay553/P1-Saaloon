@@ -1,19 +1,43 @@
 "use client";
 
+import { useQuery } from '@tanstack/react-query';
 import { useBookingStore } from '../../store/useBookingStore';
+import { getAvailability } from '@saloon/services';
 import { Button } from '@saloon/ui';
 import { format, addDays, formatISO } from 'date-fns';
 import { Calendar as CalendarIcon, Clock } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+
+const TimeSlotSkeleton = () => (
+  <div className="h-10 bg-slate-200 rounded-lg animate-pulse"></div>
+);
 
 export function DateTimeSelection() {
-  const { selectedDate, setDate, selectedTime, setTime, nextStep, prevStep } = useBookingStore();
+  const { selectedService, selectedStaff, selectedDate, setDate, selectedTime, setTime, nextStep, prevStep } = useBookingStore();
   
   // Generate next 7 days
   const next7Days = Array.from({ length: 7 }).map((_, i) => addDays(new Date(), i));
   
-  // Mock time slots
-  const timeSlots = ['09:00 AM', '09:30 AM', '10:00 AM', '11:00 AM', '01:00 PM', '02:30 PM', '04:00 PM'];
+  // Ensure selectedDate is always a valid Date object for the query
+  useEffect(() => {
+    if (!selectedDate) {
+      setDate(next7Days[0]); // Default to today if no date is selected
+    }
+  }, [selectedDate, setDate, next7Days]);
+
+  const requestData = {
+    serviceId: selectedService?.id,
+    staffId: selectedStaff?.id === 'any' ? null : selectedStaff?.id, // Send null for "Anyone Available"
+    date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : null,
+  };
+
+  const { data: availability, isLoading, error } = useQuery({
+    queryKey: ['availability', requestData],
+    queryFn: () => getAvailability(requestData),
+    enabled: !!selectedService && !!selectedStaff && !!selectedDate, // Only fetch if all prerequisites are met
+  });
+
+  const availableSlots = availability?.availableSlots || [];
 
   return (
     <div className="flex flex-col h-full">
@@ -59,29 +83,53 @@ export function DateTimeSelection() {
               <Clock className="w-5 h-5 text-primary" />
               <h3>Available Times for {format(selectedDate, 'MMM do')}</h3>
             </div>
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-              {timeSlots.map((time) => {
-                const isSelected = selectedTime === time;
-                return (
-                  <div
-                    key={time}
-                    onClick={() => setTime(time)}
-                    className={`py-3 text-center rounded-lg border-2 cursor-pointer font-medium transition-all text-sm ${
-                      isSelected ? 'border-primary bg-primary/10 text-primary shadow-sm' : 'border-slate-200 text-slate-700 hover:border-primary/50 hover:bg-slate-50'
-                    }`}
-                  >
-                    {time}
-                  </div>
-                );
-              })}
-            </div>
+            
+            {isLoading && (
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                <TimeSlotSkeleton /><TimeSlotSkeleton /><TimeSlotSkeleton /><TimeSlotSkeleton />
+              </div>
+            )}
+
+            {error && (
+              <div className="p-4 rounded-xl border-2 border-red-200 bg-red-50 text-red-700">
+                <h3 className="font-semibold">Error Fetching Slots</h3>
+                <p className="text-sm">{error.message}</p>
+              </div>
+            )}
+
+            {!isLoading && !error && availableSlots.length === 0 && (
+              <div className="p-4 rounded-xl border-2 border-slate-200 bg-slate-50 text-slate-700 text-center">
+                <p className="font-medium">No slots available for this day.</p>
+                <p className="text-sm">Please choose another date or staff member.</p>
+              </div>
+            )}
+
+            {!isLoading && !error && availableSlots.length > 0 && (
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                {availableSlots.map((time) => {
+                  const formattedTime = format(new Date().setHours(time.split(':')[0], time.split(':')[1]), 'hh:mm a');
+                  const isSelected = selectedTime === formattedTime;
+                  return (
+                    <div
+                      key={time}
+                      onClick={() => setTime(formattedTime)}
+                      className={`py-3 text-center rounded-lg border-2 cursor-pointer font-medium transition-all text-sm ${
+                        isSelected ? 'border-primary bg-primary/10 text-primary shadow-sm' : 'border-slate-200 text-slate-700 hover:border-primary/50 hover:bg-slate-50'
+                      }`}
+                    >
+                      {formattedTime}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
       </div>
 
       <div className="mt-8 flex justify-between pt-4 border-t border-slate-100">
         <Button onClick={prevStep} variant="ghost" size="lg">Back</Button>
-        <Button onClick={nextStep} disabled={!selectedDate || !selectedTime} size="lg">Review Booking</Button>
+        <Button onClick={nextStep} disabled={!selectedDate || !selectedTime || isLoading} size="lg">Review Booking</Button>
       </div>
     </div>
   );

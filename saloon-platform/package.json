@@ -12,6 +12,7 @@
     "lint": "turbo run lint"
   },
   "devDependencies": {
-    "turbo": "latest"
+    "turbo": "latest",
+    "next-themes": "^0.3.0"
   }
 }

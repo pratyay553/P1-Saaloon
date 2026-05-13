@@ -1,17 +1,29 @@
 "use client";
 
+import { useQuery } from '@tanstack/react-query';
 import { useBookingStore } from '../../store/useBookingStore';
+import { getStaff } from '@saloon/services';
 import { Button } from '@saloon/ui';
 import { User, Star } from 'lucide-react';
 
-const mockStaff = [
-  { id: 'st1', name: 'Emily Rose', role: 'Senior Stylist', rating: '4.9', reviews: 124 },
-  { id: 'st2', name: 'David Thompson', role: 'Color Specialist', rating: '5.0', reviews: 89 },
-  { id: 'st3', name: 'Anyone Available', role: 'First Available', rating: '-', reviews: 0, isAny: true },
-];
+const StaffSkeleton = () => (
+  <div className="relative p-5 rounded-xl border-2 border-slate-200 animate-pulse flex flex-col items-center text-center">
+    <div className="w-20 h-20 rounded-full bg-slate-200 mb-4"></div>
+    <div className="h-5 w-3/4 bg-slate-200 rounded mb-2"></div>
+    <div className="h-4 w-1/2 bg-slate-200 rounded"></div>
+  </div>
+);
 
 export function StaffSelection() {
   const { selectedStaff, setStaff, nextStep, prevStep } = useBookingStore();
+
+  const { data: staffList, isLoading, error } = useQuery({
+    queryKey: ['staff'],
+    queryFn: getStaff,
+  });
+
+  // Add a "Anyone Available" option to the fetched staff list
+  const staffWithOptions = staffList ? [...staffList, { id: 'any', name: 'Anyone Available', role: 'First Available', isAny: true }] : [];
 
   return (
     <div className="flex flex-col h-full">
@@ -21,7 +33,22 @@ export function StaffSelection() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 flex-1 overflow-y-auto pr-2">
-        {mockStaff.map((staff) => {
+        {isLoading && (
+          <>
+            <StaffSkeleton />
+            <StaffSkeleton />
+            <StaffSkeleton />
+          </>
+        )}
+
+        {error && (
+          <div className="p-4 rounded-xl border-2 border-red-200 bg-red-50 text-red-700 col-span-full">
+            <h3 className="font-semibold">Error Fetching Staff</h3>
+            <p className="text-sm">{error.message}</p>
+          </div>
+        )}
+
+        {staffWithOptions.map((staff) => {
           const isSelected = selectedStaff?.id === staff.id;
           return (
             <div
@@ -40,7 +67,8 @@ export function StaffSelection() {
               {!staff.isAny && (
                 <div className="flex items-center gap-1 text-sm font-medium text-slate-700 bg-amber-50 px-2 py-1 rounded-full text-amber-700">
                   <Star className="w-4 h-4 fill-current" />
-                  {staff.rating} <span className="text-amber-700/60 font-normal">({staff.reviews})</span>
+                  {/* Assuming staff has a rating field from backend */}
+                  {staff.rating || 'N/A'} <span className="text-amber-700/60 font-normal">({staff.reviews || 0})</span>
                 </div>
               )}
             </div>
@@ -50,7 +78,7 @@ export function StaffSelection() {
 
       <div className="mt-8 flex justify-between pt-4 border-t border-slate-100">
         <Button onClick={prevStep} variant="ghost" size="lg">Back</Button>
-        <Button onClick={nextStep} disabled={!selectedStaff} size="lg">Continue to Time</Button>
+        <Button onClick={nextStep} disabled={!selectedStaff || isLoading} size="lg">Continue to Time</Button>
       </div>
     </div>
   );

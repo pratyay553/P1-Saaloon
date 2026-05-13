@@ -2,23 +2,47 @@
 
 import { useBookingStore } from '../../store/useBookingStore';
 import { Button } from '@saloon/ui';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { CalendarIcon, Clock, MapPin, User, CheckCircle2 } from 'lucide-react';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useMutation } from '@tanstack/react-query';
+import { createAppointment } from '@saloon/services';
 
 export function BookingSummary() {
   const { selectedService, selectedStaff, selectedDate, selectedTime, prevStep, resetBooking } = useBookingStore();
   const [isConfirmed, setIsConfirmed] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [bookingError, setBookingError] = useState(null);
+
+  const bookingMutation = useMutation({
+    mutationFn: createAppointment,
+    onSuccess: () => {
+      setIsConfirmed(true);
+      setBookingError(null);
+    },
+    onError: (error) => {
+      setBookingError(error.response?.data?.message || 'Failed to book appointment. Please try again.');
+      console.error("Booking error:", error);
+    },
+  });
 
   const handleConfirm = () => {
-    setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      setIsConfirmed(true);
-    }, 1500);
+    if (!selectedService || !selectedStaff || !selectedDate || !selectedTime) {
+      setBookingError("Please complete all booking selections.");
+      return;
+    }
+
+    // Combine date and time into a single ISO string for the backend
+    const dateTimeString = `${format(selectedDate, 'yyyy-MM-dd')}T${selectedTime.split(' ')[0]}:00`;
+    const appointmentDateTime = parseISO(dateTimeString);
+
+    const bookingRequest = {
+      serviceId: selectedService.id,
+      staffId: selectedStaff.id === 'any' ? null : selectedStaff.id,
+      appointmentDateTime: appointmentDateTime.toISOString(),
+    };
+
+    bookingMutation.mutate(bookingRequest);
   };
 
   if (isConfirmed) {
@@ -48,14 +72,19 @@ export function BookingSummary() {
       </div>
 
       <div className="flex-1 overflow-y-auto pr-2">
+        {bookingError && (
+          <div className="p-3 text-sm text-red-600 bg-red-50 rounded-lg border border-red-100 mb-4">
+            {bookingError}
+          </div>
+        )}
         <div className="bg-slate-50 rounded-2xl border border-slate-200 p-6 space-y-6">
           
           <div className="flex justify-between items-start border-b border-slate-200 pb-6">
             <div>
               <h3 className="text-xl font-bold text-slate-900">{selectedService?.name}</h3>
-              <p className="text-slate-500 mt-1">{selectedService?.duration}</p>
+              <p className="text-slate-500 mt-1">{selectedService?.duration} min</p>
             </div>
-            <span className="text-xl font-bold text-slate-900">{selectedService?.price}</span>
+            <span className="text-xl font-bold text-slate-900">${selectedService?.price}</span>
           </div>
 
           <div className="space-y-4">
@@ -87,8 +116,8 @@ export function BookingSummary() {
       </div>
 
       <div className="mt-8 flex justify-between pt-4 border-t border-slate-100">
-        <Button onClick={prevStep} variant="ghost" size="lg" disabled={isLoading}>Back</Button>
-        <Button onClick={handleConfirm} size="lg" isLoading={isLoading}>Confirm Booking</Button>
+        <Button onClick={prevStep} variant="ghost" size="lg" disabled={bookingMutation.isPending}>Back</Button>
+        <Button onClick={handleConfirm} size="lg" isLoading={bookingMutation.isPending}>Confirm Booking</Button>
       </div>
     </div>
   );

@@ -6,14 +6,15 @@ import { useMutation } from "@tanstack/react-query";
 import { loginSchema } from "@saloon/types";
 import { loginUser } from "@saloon/services";
 import { Button, Input, FormGroup } from "@saloon/ui";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useAuthStore } from "@saloon/store";
 
 export function LoginForm() {
   const router = useRouter();
-  const { setToken } = useAuthStore();
+  const searchParams = useSearchParams();
+  const { setToken, setUser } = useAuthStore(); // Also get setUser
   const { register, handleSubmit, formState: { errors } } = useForm({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -24,20 +25,26 @@ export function LoginForm() {
 
   const { mutate, isPending, error } = useMutation({
     mutationFn: loginUser,
-    onSuccess: (data) => {
-      // Store the token in the Zustand store (which also persists it)
-      if (data.token) {
-        setToken(data.token);
-        
-        // Keep these for backward compatibility if needed by the api-client interceptor
-        localStorage.setItem('jwt_token', data.token);
-        localStorage.setItem('username', data.username);
-        
-        // Set a generic cookie for Next.js middleware protection
-        document.cookie = "is_auth=true; path=/; max-age=86400; SameSite=Lax";
+    onSuccess: (response) => {
+      // The backend now sets HttpOnly cookies.
+      // We still get the profile data in the response body.
+      if (response.data.profile) {
+        setUser(response.data.profile); // Update Zustand store with profile
+        // No need to set localStorage for token or is_auth cookie here.
+        // The backend's Set-Cookie header handles jwt_token (HttpOnly).
+        // The backend's Set-Cookie header handles is_auth (for middleware).
       }
-      // Redirect to the dashboard upon successful login
-      router.push("/dashboard");
+      
+      const callbackUrl = searchParams.get('callbackUrl');
+      console.log("Login successful. Callback URL:", callbackUrl);
+      
+      // Force a full page reload to ensure cookies are fully processed by the browser
+      // and middleware correctly picks them up for the next request.
+      if (callbackUrl) {
+        window.location.href = callbackUrl; 
+      } else {
+        window.location.href = "/dashboard";
+      }
     },
   });
 
