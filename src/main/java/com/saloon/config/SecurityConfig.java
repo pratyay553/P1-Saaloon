@@ -39,7 +39,7 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .cors(cors -> {}) // Enable CORS based on CorsConfig
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/users/signup", "/api/users/signin", "/", "/error").permitAll()
+                .requestMatchers("/api/users/signup", "/api/users/signin", "/", "/error", "/api/booking/availability").permitAll()
                 // Example of role-based protection for a future admin endpoint
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 // All other endpoints require authentication

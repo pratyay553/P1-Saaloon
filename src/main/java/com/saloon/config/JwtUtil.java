@@ -23,7 +23,7 @@ public class JwtUtil {
     private String secretKey;
 
     @Value("${jwt.expiration}")
-    private long jwtExpiration;
+    private String jwtExpiration; // Changed to String
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
@@ -43,7 +43,7 @@ public class JwtUtil {
     }
 
     public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {
-        return buildToken(extraClaims, userDetails.getUsername(), jwtExpiration);
+        return buildToken(extraClaims, userDetails.getUsername(), Long.parseLong(jwtExpiration)); // Parse to long here
     }
 
     private String buildToken(Map<String, Object> extraClaims, String username, long expiration) {
@@ -82,5 +82,9 @@ public class JwtUtil {
     private SecretKey getSignInKey() {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(keyBytes);
+    }
+
+    public long getJwtExpiration() {
+        return Long.parseLong(jwtExpiration);
     }
 }

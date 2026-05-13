@@ -6,6 +6,8 @@ import com.saloon.user.dto.ProfileDto;
 import com.saloon.user.dto.SignupRequestDto;
 import com.saloon.user.model.Account;
 import com.saloon.user.service.UserService;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,7 +57,7 @@ public class UserController {
     }
 
     @PostMapping("/signin")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> signin(@RequestBody Account account) {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> signin(@RequestBody Account account, HttpServletResponse response) {
         log.info("Received signin request for username: {}", account.getUsername());
         Optional<Account> loggedInUser = userService.login(account.getUsername(), account.getPassword());
         if (loggedInUser.isPresent()) {
@@ -68,10 +70,26 @@ public class UserController {
             String jwtToken = jwtUtil.generateToken(userDetails);
             log.info("JWT generated for user: {}", user.getUsername());
             
+            // Set JWT in an HttpOnly cookie
+            Cookie jwtCookie = new Cookie("jwt_token", jwtToken);
+            jwtCookie.setHttpOnly(true);
+            jwtCookie.setSecure(false); // Set to true in production with HTTPS
+            jwtCookie.setPath("/");
+            jwtCookie.setMaxAge((int) (jwtUtil.getJwtExpiration() / 1000)); // MaxAge in seconds, cast to int
+            response.addCookie(jwtCookie);
+
+            // Also set a simple cookie for Next.js middleware
+            Cookie authFlagCookie = new Cookie("is_auth", "true");
+            authFlagCookie.setHttpOnly(false); // Accessible by JS for logout, but not sensitive
+            authFlagCookie.setSecure(false); // Set to true in production with HTTPS
+            authFlagCookie.setPath("/");
+            authFlagCookie.setMaxAge((int) (jwtUtil.getJwtExpiration() / 1000)); // MaxAge in seconds, cast to int
+            response.addCookie(authFlagCookie);
+            
             ProfileDto profileDto = new ProfileDto(user.getId(), user.getUsername(), user.getEmail(), user.getRole().name());
             
             Map<String, Object> data = new HashMap<>();
-            data.put("token", jwtToken);
+            data.put("token", jwtToken); // Still send token in response for frontend convenience (e.g., Zustand)
             data.put("profile", profileDto);
             
             return ApiResponse.success("Login successful", data);
@@ -98,7 +116,7 @@ public class UserController {
     }
 
     @PutMapping("/me")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> updateProfile(@Valid @RequestBody ProfileDto profileDto) {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> updateProfile(@Valid @RequestBody ProfileDto profileDto, HttpServletResponse response) {
         String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
         log.info("Received profile update request for user: {}", currentUsername);
         Account updatedAccount = userService.updateUser(currentUsername, profileDto);
@@ -115,7 +133,24 @@ public class UserController {
                 .roles(updatedAccount.getRole().name())
                 .build();
             String newJwtToken = jwtUtil.generateToken(userDetails);
-            data.put("token", newJwtToken);
+            
+            // Update JWT in HttpOnly cookie
+            Cookie jwtCookie = new Cookie("jwt_token", newJwtToken);
+            jwtCookie.setHttpOnly(true);
+            jwtCookie.setSecure(false); // Set to true in production with HTTPS
+            jwtCookie.setPath("/");
+            jwtCookie.setMaxAge((int) (jwtUtil.getJwtExpiration() / 1000)); // MaxAge in seconds, cast to int
+            response.addCookie(jwtCookie);
+
+            // Update auth flag cookie
+            Cookie authFlagCookie = new Cookie("is_auth", "true");
+            authFlagCookie.setHttpOnly(false);
+            authFlagCookie.setSecure(false);
+            authFlagCookie.setPath("/");
+            authFlagCookie.setMaxAge((int) (jwtUtil.getJwtExpiration() / 1000)); // MaxAge in seconds, cast to int
+            response.addCookie(authFlagCookie);
+
+            data.put("token", newJwtToken); // Still send token in response for frontend convenience (e.g., Zustand)
         }
         
         return ApiResponse.success("Profile updated successfully", data);
