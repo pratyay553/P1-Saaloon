@@ -31,6 +31,8 @@ public class Appointment {
     @Column(nullable = false)
     private AppointmentStatus status;
 
+    @Version
+    private Integer version;
     // Getters and Setters
     public Long getId() {
         return id;

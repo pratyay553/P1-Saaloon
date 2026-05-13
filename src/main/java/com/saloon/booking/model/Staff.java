@@ -1,10 +1,6 @@
 package com.saloon.booking.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "staff")
@@ -16,7 +12,8 @@ public class Staff {
 
     private String name;
     private String role; // e.g., "Senior Stylist", "Color Specialist"
-
+    @Version
+    private Integer version;
     // Getters and Setters
     public Long getId() {
         return id;

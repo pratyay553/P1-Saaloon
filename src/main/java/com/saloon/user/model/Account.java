@@ -1,12 +1,6 @@
 package com.saloon.user.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "account") // Explicitly naming the table
@@ -22,7 +16,8 @@ public class Account {
 
     @Enumerated(EnumType.STRING)
     private Role role;
-
+    @Version
+    private Integer version;
     public Account() {
         this.role = Role.CUSTOMER; // Default role for new accounts
     }

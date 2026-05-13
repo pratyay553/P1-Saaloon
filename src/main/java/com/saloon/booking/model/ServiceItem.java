@@ -1,10 +1,7 @@
 package com.saloon.booking.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+
 import java.math.BigDecimal;
 
 @Entity
@@ -19,7 +16,8 @@ public class ServiceItem {
     private String description;
     private Integer duration; // Duration in minutes
     private BigDecimal price;
-
+    @Version
+    private Integer version;
     // Getters and Setters
     public Long getId() {
         return id;
